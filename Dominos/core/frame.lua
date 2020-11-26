@@ -602,6 +602,64 @@ end
 Frame.stickyTolerance = 16
 
 -- edge anchoring
+local COORDS = {
+	TOPLEFT = function(l, b, w, h) return l, b + h end,
+	TOP = function(l, b, w, h) return l + w/2, b + h end,
+	TOPRIGHT = function(l, b, w, h) return l + w, b + h end,
+	RIGHT = function(l, b, w, h) return l + w, b + h/2 end,
+	BOTTOMRIGHT = function(l, b, w, h) return l + w, b end,
+	BOTTOM = function(l, b, w, h) return l + w/2, b end,
+	BOTTOMLEFT = function(l, b, w, h) return l, b end,
+	LEFT = function(l, b, w, h) return l, b + h/2 end,
+	CENTER = function(l, b, w, h) return l + w/2, b + h/2 end,
+}
+
+function Frame:SnapToGrid()
+    local relFrame = self:GetParent()
+    local rfW, rfH = relFrame:GetSize()
+    local gridSize = Addon:GetAlignmentGridSize()
+    local aspectRatio = rfW / rfH
+    local verticalLines = gridSize
+
+    -- convert to an even number, so that we can highlight the middle point
+    local horizontalLines = _G.Round((gridSize / aspectRatio) / 2) * 2
+
+    local xOffset = rfW / verticalLines
+    local yOffset = rfH / horizontalLines
+
+    local bestDistance = math.huge
+    local bestPoint
+    local bestRelPoint = 'BOTTOMLEFT'
+    local bestX
+    local bestY
+    local maxDistance = self.stickyTolerance ^ 2
+
+    for point, getCoords in pairs(COORDS) do
+        local x1, y1 = getCoords(self:GetRect())
+
+        for vl = 0, verticalLines do
+            for hl = 0, horizontalLines do
+                local x2 = (vl * xOffset)
+                local y2 = (hl * yOffset)
+                local distance = (x1 - x2) ^ 2 + (y1 - y2) ^ 2
+
+                if distance < bestDistance then
+                    bestPoint = point
+                    bestDistance = distance
+                    bestX = x2
+                    bestY = y2
+                end
+            end
+        end
+    end
+
+    if bestDistance <= maxDistance then
+        self:ClearAllPoints()
+        self:SetPoint(bestPoint, relFrame, bestRelPoint, bestX, bestY)
+        return true
+    end
+end
+
 function Frame:StickToEdge()
     local point, x, y = self:GetRelativeFramePosition()
     local rTolerance = self.stickyTolerance / self:GetFrameScale()
@@ -620,6 +678,7 @@ function Frame:StickToEdge()
     --save this junk if we've done something
     if changed then
         self:SetAndSaveFramePosition(point, x, y)
+        return true
     end
 end
 
@@ -628,13 +687,13 @@ function Frame:Stick()
     self:ClearAnchor()
 
     -- only do sticky code if the alt key is not currently down
-    if Addon:Sticky() and not IsAltKeyDown() then
-        local anchor, id = FlyPaper.StickToClosestFrameInGroup(self, AddonName)
+    if Addon:Sticky() and not _G.IsAltKeyDown() then
+        local anchor, id = FlyPaper.StickToClosestFrameInGroup(self, AddonName, self.stickyTolerance)
 
         if anchor then
             self:SetAnchor(active[id], anchor)
         else
-            self:StickToEdge()
+            self:SnapToGrid()
         end
     end
 

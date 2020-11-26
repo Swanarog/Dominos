@@ -9,8 +9,8 @@ local function GetMultiple(value, factor)
     return _G.Round(value / factor) * factor
 end
 
-local BACKGROUND_COLOR = _G.CreateColor(0, 0, 0, 0.3)
-local GRID_COLOR = _G.CreateColor(1, 1, 1, 0.1)
+local BACKGROUND_COLOR = _G.CreateColor(0, 0, 0, 0.4)
+local GRID_COLOR = _G.CreateColor(1, 1, 1, 0.2)
 local GRID_HIGHLIGHT_COLOR = _G.CreateColor(0.6, 0.3, 0.68, 0.5)
 local GRID_THICKNESS = 1
 
