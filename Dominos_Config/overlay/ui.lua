@@ -72,6 +72,8 @@ end
 function OverlayUI:OnEnable()
     self:RegisterEvent('PLAYER_REGEN_ENABLED')
     self:RegisterEvent('PLAYER_REGEN_DISABLED')
+    self:RegisterEvent('UI_SCALE_CHANGED')
+    self:RegisterEvent('DISPLAY_SIZE_CHANGED')
 
     ParentAddon.RegisterCallback(self, 'ALIGNMENT_GRID_ENABLED')
     ParentAddon.RegisterCallback(self, 'ALIGNMENT_GRID_SIZE_CHANGED')
@@ -116,6 +118,14 @@ end
 
 function OverlayUI:PLAYER_REGEN_DISABLED()
     self:SetVisible(false)
+end
+
+function OverlayUI:UI_SCALE_CHANGED()
+    self:UpdateGrid()
+end
+
+function OverlayUI:DISPLAY_SIZE_CHANGED()
+    self:UpdateGrid()
 end
 
 function OverlayUI:ALIGNMENT_GRID_ENABLED()
@@ -187,12 +197,8 @@ end
 function OverlayUI:DrawGrid()
     self:ClearGrid()
 
-    local gridSize = ParentAddon:GetAlignmentGridSize()
+    local verticalLines, horizontalLines = ParentAddon:GetAlignmentGridLines()
     local width, height = self.frame:GetSize()
-    local aspectRatio = width / height
-    local verticalLines = gridSize
-    -- convert to an even number, so that we can highlight the middle point
-    local horizontalLines = GetMultiple(gridSize / aspectRatio, 2)
     local xOffset = width / verticalLines
     local yOffset = height / horizontalLines
 
