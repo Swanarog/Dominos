@@ -599,7 +599,7 @@ end
 --------------------------------------------------------------------------------
 
 -- how far away a frame can be from another frame/edge to trigger anchoring
-Frame.stickyTolerance = 16
+Frame.stickyTolerance = 8
 
 -- edge anchoring
 local COORDS = {
@@ -614,18 +614,28 @@ local COORDS = {
 	CENTER = function(l, b, w, h) return l + w/2, b + h/2 end,
 }
 
+local GetUnscaledFrameRect = _G.GetUnscaledFrameRect
+if not GetUnscaledFrameRect then
+    GetUnscaledFrameRect = function(frame, scale)
+        local l, b, w, h = frame:GetRect()
+        local s = frame:GetEffectiveScale()
+
+        return (l * s) / scale, (b  * s) / scale, (w * s) / scale, (h * s) / scale
+    end
+end
+
 function Frame:SnapToGrid()
+    local verticalLines, horizontalLines = Addon:GetAlignmentGridLines()
+
     local relFrame = self:GetParent()
-    local rfW, rfH = relFrame:GetSize()
-    local gridSize = Addon:GetAlignmentGridSize()
-    local aspectRatio = rfW / rfH
-    local verticalLines = gridSize
+    local relFrameWidth, relFrameHeight = relFrame:GetSize()
+    local relFrameScale = relFrame:GetEffectiveScale()
+    local frameTop, frameBottom, frameWidth, frameHeight = GetUnscaledFrameRect(self, relFrameScale)
+    local frameScale = self:GetEffectiveScale()
+    local relativeScale = frameScale / relFrameScale
 
-    -- convert to an even number, so that we can highlight the middle point
-    local horizontalLines = _G.Round((gridSize / aspectRatio) / 2) * 2
-
-    local xOffset = rfW / verticalLines
-    local yOffset = rfH / horizontalLines
+    local xOffset = relFrameWidth / verticalLines
+    local yOffset = relFrameHeight / horizontalLines
 
     local bestDistance = math.huge
     local bestPoint
@@ -635,7 +645,7 @@ function Frame:SnapToGrid()
     local maxDistance = self.stickyTolerance ^ 2
 
     for point, getCoords in pairs(COORDS) do
-        local x1, y1 = getCoords(self:GetRect())
+        local x1, y1 = getCoords(frameTop, frameBottom, frameWidth, frameHeight)
 
         for vl = 0, verticalLines do
             for hl = 0, horizontalLines do
@@ -655,7 +665,7 @@ function Frame:SnapToGrid()
 
     if bestDistance <= maxDistance then
         self:ClearAllPoints()
-        self:SetPoint(bestPoint, relFrame, bestRelPoint, bestX, bestY)
+        self:SetPoint(bestPoint, relFrame, bestRelPoint, bestX / relativeScale, bestY / relativeScale)
         return true
     end
 end
@@ -675,7 +685,6 @@ function Frame:StickToEdge()
         changed = true
     end
 
-    --save this junk if we've done something
     if changed then
         self:SetAndSaveFramePosition(point, x, y)
         return true
