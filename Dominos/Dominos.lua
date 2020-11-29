@@ -742,6 +742,20 @@ function Addon:GetAlignmentGridSize()
     return self.db.profile.alignmentGrid.size
 end
 
+function Addon:GetAlignmentGridLines()
+    local gridSize = self:GetAlignmentGridSize()
+    if gridSize <= 0 then
+        return 0, 0
+    end
+
+    local width, height = GetScreenWidth(), GetScreenHeight()
+    local aspectRatio = (width / height)
+    local verticalLines = Round(gridSize / 2) * 2
+    local horizontalLines = Round(verticalLines / aspectRatio / 2) * 2
+
+    return verticalLines, horizontalLines
+end
+
 --------------------------------------------------------------------------------
 -- Utility Methods
 --------------------------------------------------------------------------------
