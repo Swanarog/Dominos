@@ -199,41 +199,18 @@ function OverlayUI:DrawGrid()
     local cx = (GetScreenWidth() / 2)
     local cy = (GetScreenHeight() / 2)
 	local w = (GetScreenHeight() / ParentAddon:GetAlignmentGridSize())
-
-    local cvLine = self:AcquireGridLine()
-    cvLine:SetColorTexture(GRID_HIGHLIGHT_COLOR:GetRGBA())
-    cvLine:SetStartPoint('TOPLEFT', cx, 0)
-    cvLine:SetEndPoint('BOTTOMLEFT', cx, 0)
-
-    local vLine
-    for i = w, cx, w do
-        vLine = self:AcquireGridLine()
-        vLine:SetColorTexture(GRID_COLOR:GetRGBA())
-        vLine:SetStartPoint('TOPLEFT', cx + i, 0)
-        vLine:SetEndPoint('BOTTOMLEFT', cx + i, 0)
-
-        vLine = self:AcquireGridLine()
-        vLine:SetColorTexture(GRID_COLOR:GetRGBA())
-        vLine:SetStartPoint('TOPLEFT', cx - i, 0)
-        vLine:SetEndPoint('BOTTOMLEFT', cx - i, 0)
+	local _ --don't waste memory
+	
+    for i = w, cx + w, w do
+		local vertex = i-w
+		self:DrawGridLine('TOP', 'BOTTOM', vertex, 0, (vertex ~= 0) and GRID_COLOR or GRID_HIGHLIGHT_COLOR)
+		_ = (vertex ~= 0) and self:DrawGridLine('TOP', 'BOTTOM', -(vertex), 0, GRID_COLOR) --don't draw a second line at screen center
     end
 
-    local chLine = self:AcquireGridLine()
-    chLine:SetColorTexture(GRID_HIGHLIGHT_COLOR:GetRGBA())
-    chLine:SetStartPoint('BOTTOMLEFT', 0, cy)
-    chLine:SetEndPoint('BOTTOMRIGHT', 0, cy)
-
-    local hLine
-    for i = w, cy, w do
-        hLine = self:AcquireGridLine()
-        hLine:SetColorTexture(GRID_COLOR:GetRGBA())
-        hLine:SetStartPoint('BOTTOMLEFT', 0, cy + i)
-        hLine:SetEndPoint('BOTTOMRIGHT', 0, cy + i)
-
-        hLine = self:AcquireGridLine()
-        hLine:SetColorTexture(GRID_COLOR:GetRGBA())
-        hLine:SetStartPoint('BOTTOMLEFT', 0, cy - i)
-        hLine:SetEndPoint('BOTTOMRIGHT', 0, cy - i)
+    for i = w, cy + w, w do
+		local vertex = i-w
+        self:DrawGridLine('LEFT', 'RIGHT', 0, vertex, (vertex ~= 0) and GRID_COLOR or GRID_HIGHLIGHT_COLOR)
+		_ = (vertex ~= 0) and self:DrawGridLine('LEFT', 'RIGHT', 0, -(vertex), GRID_COLOR) --don't draw a second line at screen center
     end
 end
 
@@ -248,7 +225,7 @@ function OverlayUI:ClearGrid()
     end
 end
 
-function OverlayUI:AcquireGridLine()
+function OverlayUI:DrawGridLine(start, finish, x, y, color)
     local inactiveLines = self.inactiveGridLines
 
     -- restore
@@ -269,6 +246,11 @@ function OverlayUI:AcquireGridLine()
     end
 
     line:SetThickness(1)
+	
+	line:SetColorTexture(color:GetRGBA())
+	line:SetStartPoint(start, x, y)
+	line:SetEndPoint(finish, x, y)
+	
     line:Show()
     return line
 end
